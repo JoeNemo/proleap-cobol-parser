@@ -355,9 +355,9 @@ public class NameResolverImpl implements NameResolver {
 
 		if (ctx == null) {
 			result = null;
-		} else if (ctx.qualifiedDataNameFormat1() != null) {
+		} /* else if (ctx.qualifiedDataNameFormat1() != null) {
 			result = determineName(ctx.qualifiedDataNameFormat1());
-		} else if (ctx.qualifiedDataNameFormat2() != null) {
+		} */ else if (ctx.qualifiedDataNameFormat2() != null) {
 			result = determineName(ctx.qualifiedDataNameFormat2());
 		} else if (ctx.qualifiedDataNameFormat3() != null) {
 			result = determineName(ctx.qualifiedDataNameFormat3());

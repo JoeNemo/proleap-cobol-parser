@@ -522,12 +522,12 @@ public class ProgramUnitElementImpl extends CompilationUnitElementImpl implement
 	protected Call createCall(final QualifiedDataNameContext ctx) {
 		final Call result;
 
-		if (ctx.qualifiedDataNameFormat1() != null) {
+		/* if (ctx.qualifiedDataNameFormat1() != null) {
 			final Call dataCall = createCall(ctx.qualifiedDataNameFormat1());
 			result = new CallDelegateImpl(dataCall, programUnit, ctx);
 
 			registerASGElement(result);
-		} else if (ctx.qualifiedDataNameFormat2() != null) {
+		} else */ if (ctx.qualifiedDataNameFormat2() != null) {
 			final Call dataCall = createCall(ctx.qualifiedDataNameFormat2());
 			result = new CallDelegateImpl(dataCall, programUnit, ctx);
 

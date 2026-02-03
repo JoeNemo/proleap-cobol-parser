@@ -26,7 +26,9 @@ public class CobolDocumentContext {
 	private StringBuffer outputBuffer = new StringBuffer();
 
 	public String read() {
-		return outputBuffer.toString();
+          String out = outputBuffer.toString();
+          // System.err.printf("JOE CobDocCtx read, len=%d\n",out.length());
+          return out;
 	}
 
 	/**
@@ -41,6 +43,16 @@ public class CobolDocumentContext {
 				final String replacedOutput = replaceableReplacement.replace(currentOutput, tokens);
 
 				outputBuffer = new StringBuffer();
+                                int interestingStringPos = replacedOutput.indexOf("CALC1-FYH2-CALC1");
+                                if (interestingStringPos != -1){
+                                  int rangeStart = Math.max(0,interestingStringPos-80);
+                                  int rangeEnd = Math.min(replacedOutput.length(),interestingStringPos+80);
+                                  System.err.printf("interesting replacement at %d\n%s\n",
+                                                    interestingStringPos,
+                                                    replacedOutput.substring(rangeStart,rangeEnd));
+                                  replaceableReplacement.describe(tokens);
+                                  Thread.dumpStack();
+                                }
 				outputBuffer.append(replacedOutput);
 			}
 		}
@@ -66,6 +78,10 @@ public class CobolDocumentContext {
 			}
 		}
 	}
+
+  public int getLength(){
+    return outputBuffer.length();
+  }
 
 	public void write(final String text) {
 		outputBuffer.append(text);

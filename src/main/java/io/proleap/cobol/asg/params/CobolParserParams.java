@@ -13,6 +13,7 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 import io.proleap.cobol.preprocessor.CobolPreprocessor.CobolSourceFormatEnum;
+import io.proleap.cobol.preprocessor.PreprocessingInfo;
 
 public interface CobolParserParams {
 
@@ -46,4 +47,7 @@ public interface CobolParserParams {
 	void setFormat(CobolSourceFormatEnum format);
 
 	void setIgnoreSyntaxErrors(boolean ignoreSyntaxErrors);
+
+        PreprocessingInfo getPreprocessingInfo();
+        void setPreprocessingInfo(PreprocessingInfo info);
 }

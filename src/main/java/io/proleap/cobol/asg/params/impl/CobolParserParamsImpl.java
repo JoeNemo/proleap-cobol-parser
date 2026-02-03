@@ -16,6 +16,7 @@ import java.util.List;
 import io.proleap.cobol.asg.params.CobolDialect;
 import io.proleap.cobol.asg.params.CobolParserParams;
 import io.proleap.cobol.preprocessor.CobolPreprocessor.CobolSourceFormatEnum;
+import io.proleap.cobol.preprocessor.PreprocessingInfo;
 
 public class CobolParserParamsImpl implements CobolParserParams {
 
@@ -32,6 +33,8 @@ public class CobolParserParamsImpl implements CobolParserParams {
 	protected CobolSourceFormatEnum format;
 
 	protected boolean ignoreSyntaxErrors;
+
+  protected PreprocessingInfo preprocessingInfo;
 
 	@Override
 	public Charset getCharset() {
@@ -102,4 +105,13 @@ public class CobolParserParamsImpl implements CobolParserParams {
 	public void setIgnoreSyntaxErrors(final boolean ignoreSyntaxErrors) {
 		this.ignoreSyntaxErrors = ignoreSyntaxErrors;
 	}
+
+        public PreprocessingInfo getPreprocessingInfo(){
+          return this.preprocessingInfo;
+        }
+  
+  public void setPreprocessingInfo(PreprocessingInfo info){
+    this.preprocessingInfo = info;
+  }
+
 }

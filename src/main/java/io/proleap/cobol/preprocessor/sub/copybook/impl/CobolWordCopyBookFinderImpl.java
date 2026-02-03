@@ -43,9 +43,10 @@ public class CobolWordCopyBookFinderImpl implements CobolWordCopyBookFinder {
 	protected File findCopyBookInDirectory(final File copyBooksDirectory, final CobolParserParams params,
 			final CobolWordContext ctx) {
 		for (final File copyBookCandidate : copyBooksDirectory.listFiles()) {
-			if (isMatchingCopyBook(copyBookCandidate, params, ctx)) {
-				return copyBookCandidate;
-			}
+                  String candidateName = copyBookCandidate.getName();
+                  if (isMatchingCopyBook(copyBookCandidate, params, ctx)) {
+                    return copyBookCandidate;
+                  }
 		}
 
 		return null;

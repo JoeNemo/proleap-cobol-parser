@@ -26,6 +26,8 @@ import io.proleap.cobol.CobolPreprocessorParser.ReplaceClauseContext;
 import io.proleap.cobol.CobolPreprocessorParser.ReplacingPhraseContext;
 import io.proleap.cobol.asg.params.CobolParserParams;
 import io.proleap.cobol.preprocessor.CobolPreprocessor;
+import io.proleap.cobol.preprocessor.PreprocessingInfo;
+import io.proleap.cobol.preprocessor.PreprocessingInfo.SourceRecord;
 import io.proleap.cobol.preprocessor.exception.CobolPreprocessorException;
 import io.proleap.cobol.preprocessor.impl.CobolPreprocessorImpl;
 import io.proleap.cobol.preprocessor.sub.CobolLine;
@@ -88,6 +90,10 @@ public class CobolDocumentParserListenerImpl extends CobolPreprocessorBaseListen
 	public CobolDocumentContext context() {
 		return contexts.peek();
 	}
+
+  public int contextDepth(){
+    return contexts.size();
+  }
 
 	protected CobolWordCopyBookFinder createCobolWordCopyBookFinder() {
 		return new CobolWordCopyBookFinderImpl();
@@ -171,21 +177,49 @@ public class CobolDocumentParserListenerImpl extends CobolPreprocessorBaseListen
 	public void exitCopyStatement(final CobolPreprocessorParser.CopyStatementContext ctx) {
 		// throw away COPY terminals
 		pop();
+                java.io.PrintStream log = System.out;
+                final CopySourceContext copySource = ctx.copySource();
+                String interestingReplacement = "CALC1-FYH2-HSFS-SUMA-DATA";
 
+                PreprocessingInfo info = params.getPreprocessingInfo();
+                if (info == null){
+                  throw new IllegalStateException("params does not have PreprocessingInfo");
+                }
 		// a new context for the copy book content
+                CobolDocumentContext containingContext = context();
+                SourceRecord sourceRecord = info.push(copySource.getText(),containingContext.getLength());
 		push();
 
 		/*
 		 * replacement phrase
 		 */
+                boolean showDetails = false;
 		for (final ReplacingPhraseContext replacingPhrase : ctx.replacingPhrase()) {
-			context().storeReplaceablesAndReplacements(replacingPhrase.replaceClause());
+                  List<ReplaceClauseContext> replaceClauses = replacingPhrase.replaceClause();
+                  context().storeReplaceablesAndReplacements(replaceClauses);
+                  for (ReplaceClauseContext replaceClause: replaceClauses){
+                    String replaceable = replaceClause.replaceable().getText();
+                    String replacement = replaceClause.replacement().getText();
+                    if (replacement.equals(interestingReplacement)){
+                      showDetails = true;
+                    }
+                    if (showDetails){
+                      log.printf("JOE REPLACE %s with %s\n",replaceable,replacement);
+                    }
+                    if ((replaceClause.replaceable().cobolWord() != null) && (replaceClause.replacement().cobolWord() != null)){
+                      if (showDetails){
+                        log.printf("  IBM non-standard whole-word replacement\n");
+                      }
+                    }
+                    sourceRecord.addReplacement(replaceable,replacement);
+                  }
+                  // sourceRecord.
 		}
 
 		/*
 		 * copy the copy book
 		 */
-		final CopySourceContext copySource = ctx.copySource();
+		
 		final String copyBookContent = getCopyBookContent(copySource, params);
 
 		if (copyBookContent != null) {
@@ -193,10 +227,28 @@ public class CobolDocumentParserListenerImpl extends CobolPreprocessorBaseListen
 			context().replaceReplaceablesByReplacements(tokens);
 		}
 
+                // how long are these?  what was the position at the time of the push
 		final String content = context().read();
+                // System.err.printf("JOE:  exitCopy with length %d\n",content.length());
 		pop();
 
-		context().write(content);
+                CobolDocumentContext copyOutContext = context();
+                if (containingContext != copyOutContext){
+                  throw new IllegalStateException("JOE has bad assumption about COBOL preprocessor stack");
+                }
+                /*
+                  System.err.printf("JOE writing out to context with length %d at depth %d\n",
+                  copyOutContext.getLength(),contextDepth());
+                */
+                if (showDetails){
+                  log.printf("BEFORE %s --------\n",interestingReplacement);
+                  log.printf("%s\n",copyBookContent);
+                  log.printf("AFTER %s -------\n",interestingReplacement);
+                  log.printf("%s\n",content);
+                  log.printf("DONE %s ------\n",interestingReplacement);
+                }
+		copyOutContext.write(content);
+                info.pop(copySource.getText(),copyOutContext.getLength());
 	}
 
 	@Override
@@ -319,6 +371,8 @@ public class CobolDocumentParserListenerImpl extends CobolPreprocessorBaseListen
 	protected File findCopyBook(final CopySourceContext copySource, final CobolParserParams params) {
 		final File result;
 
+                // System.err.printf("JOE: findCopyBook %s\n",copySource.getText());
+                // Thread.dumpStack();
 		if (copySource.cobolWord() != null) {
 			result = createCobolWordCopyBookFinder().findCopyBook(params, copySource.cobolWord());
 		} else if (copySource.literal() != null) {
@@ -329,21 +383,36 @@ public class CobolDocumentParserListenerImpl extends CobolPreprocessorBaseListen
 			LOG.warn("unknown copy book reference type {}", copySource);
 			result = null;
 		}
-
+                // System.err.printf("JOE: found %s\n",result);
 		return result;
 	}
+
+  static int callLevel = 1;
 
 	protected String getCopyBookContent(final CopySourceContext copySource, final CobolParserParams params) {
 		final File copyBook = findCopyBook(copySource, params);
 		String result;
+                boolean joeTrace = false;
 
 		if (copyBook == null) {
 			throw new CobolPreprocessorException("Could not find copy book " + copySource.getText()
 					+ " in directory of COBOL input file or copy books param object.");
 		} else {
 			try {
-				result = new CobolPreprocessorImpl().process(copyBook, params);
-			} catch (final IOException e) {
+                          if (joeTrace){
+                            System.err.printf("JOE before preprocessing the copybook %s at level %d\n",
+                                              copyBook,CobolDocumentParserListenerImpl.callLevel++);
+                          }
+                          result = new CobolPreprocessorImpl().process(copyBook, params);
+                          if (joeTrace){
+                            System.err.printf("JOE after preprocessing the copybook %s at level %d\n",
+                                              copyBook,--CobolDocumentParserListenerImpl.callLevel);
+                          }
+                        } catch (final IOException e) {
+                          if (joeTrace){
+                            CobolDocumentParserListenerImpl.callLevel--;
+                            System.err.printf("JOE IOException on copybook %s\n",copyBook);
+                          }
 				result = null;
 				LOG.warn(e.getMessage());
 			}

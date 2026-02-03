@@ -1144,8 +1144,9 @@ procedureDivisionBody
 
 // -- procedure section ----------------------------------
 
+// experimental trailing sentence which is an implicit paragraph
 procedureSection
-   : procedureSectionHeader DOT_FS paragraphs
+   : procedureSectionHeader DOT_FS paragraphs (END_SECTION DOT_FS sentence?)?
    ;
 
 paragraphs
@@ -1513,12 +1514,16 @@ gobackStatement
 // goto statement
 
 goToStatement
-   : GO TO? (goToStatementSimple | goToDependingOnStatement)
+   : GO TO? (goToStatementSimple | goToDependingOnStatement | goToEndSection )
    ;
 
 goToStatementSimple
    : procedureName
    ;
+
+goToEndSection
+    : END_SECTION
+    ;
 
 goToDependingOnStatement
    : MORE_LABELS | procedureName+ (DEPENDING ON? identifier)?
@@ -2384,8 +2389,12 @@ length
    : arithmeticExpression
    ;
 
-subscript
+old_subscript
    : ALL | integerLiteral | qualifiedDataName integerLiteral? | indexName integerLiteral? | arithmeticExpression
+   ;
+
+subscript
+   : ALL | integerLiteral | qualifiedDataName | indexName | arithmeticExpression
    ;
 
 argument
@@ -2395,12 +2404,25 @@ argument
 // qualified data name ----------------------------------
 
 qualifiedDataName
-   : qualifiedDataNameFormat1 | qualifiedDataNameFormat2 | qualifiedDataNameFormat3 | qualifiedDataNameFormat4
+    : betterQDNF1 | qualifiedDataNameFormat2 | qualifiedDataNameFormat3 | qualifiedDataNameFormat4
+//    : qualifiedDataNameFormat1 | qualifiedDataNameFormat2 | qualifiedDataNameFormat3 | qualifiedDataNameFormat4
    ;
 
 qualifiedDataNameFormat1
    : (dataName | conditionName) (qualifiedInData+ inFile? | inFile)?
    ;
+
+betterQDNF1
+    : cobolWord disambiguatingQualifier* tableSubscript? inFile?
+    ;
+
+disambiguatingQualifier
+    : (IN | OF) cobolWord
+    ;
+
+tableSubscript
+    : (LPARENCHAR subscript (COMMACHAR? subscript)* RPARENCHAR) referenceModifier?
+    ;
 
 qualifiedDataNameFormat2
    : paragraphName inSection
@@ -2816,6 +2838,7 @@ END_REMARKS : E N D MINUSCHAR R E M A R K S;
 END_RETURN : E N D MINUSCHAR R E T U R N;
 END_REWRITE : E N D MINUSCHAR R E W R I T E;
 END_SEARCH : E N D MINUSCHAR S E A R C H;
+END_SECTION: E N D MINUSCHAR S E C T I O N;
 END_START : E N D MINUSCHAR S T A R T;
 END_STRING : E N D MINUSCHAR S T R I N G;
 END_SUBTRACT : E N D MINUSCHAR S U B T R A C T;

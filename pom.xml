@@ -22,7 +22,7 @@
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 		<exclude.tests>nothing.to.exclude</exclude.tests>
-		<antlr.version>4.7.2</antlr.version>
+		<antlr.version>4.11.1</antlr.version>
 		<slf4j.version>2.0.9</slf4j.version>
 	</properties>
 	<profiles>
@@ -89,34 +89,51 @@
 					</execution>
 				</executions>
 			</plugin>
+                        <plugin>
+                          <groupId>org.apache.maven.plugins</groupId>
+                          <artifactId>maven-dependency-plugin</artifactId>
+                          <version>3.6.0</version> <!-- Use the latest version -->
+                          <executions>
+                            <execution>
+                              <id>copy-dependencies</id>
+                              <phase>package</phase> <!-- Run during package phase -->
+                              <goals>
+                                <goal>copy-dependencies</goal>
+                              </goals>
+                              <configuration>
+                                <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                              </configuration>
+                            </execution>
+                          </executions>
+                        </plugin>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.22.2</version>
-				<configuration>
-					<argLine>-Xmx2048m -Djava.awt.headless=true</argLine>
-					<excludes>
-						<exclude>${exclude.tests}</exclude>
-					</excludes>
-				</configuration>
-			</plugin>
+			  <groupId>org.apache.maven.plugins</groupId>
+			  <artifactId>maven-surefire-plugin</artifactId>
+			  <version>2.22.2</version>
+			  <configuration>
+			    <argLine>-Xmx2048m -Djava.awt.headless=true</argLine>
+			    <excludes>
+			      <exclude>${exclude.tests}</exclude>
+			    </excludes>
+			  </configuration>
+                        </plugin>
 			<plugin>
-				<groupId>org.antlr</groupId>
-				<artifactId>antlr4-maven-plugin</artifactId>
-				<version>${antlr.version}</version>
-				<executions>
-					<execution>
-						<id>run antlr</id>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>antlr4</goal>
-						</goals>
-						<configuration>
-							<listener>true</listener>
-							<visitor>true</visitor>
-						</configuration>
-					</execution>
-				</executions>
+			  <groupId>org.antlr</groupId>
+			  <artifactId>antlr4-maven-plugin</artifactId>
+			  <version>${antlr.version}</version>
+			  <executions>
+			    <execution>
+			      <id>run antlr</id>
+			      <phase>generate-sources</phase>
+			      <goals>
+				<goal>antlr4</goal>
+			      </goals>
+			      <configuration>
+				<listener>true</listener>
+				<visitor>true</visitor>
+			      </configuration>
+			    </execution>
+			  </executions>
 			</plugin>
 		</plugins>
 	</build>

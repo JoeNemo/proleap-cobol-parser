@@ -100,20 +100,84 @@ public class CobolReplacementMapping implements Comparable<CobolReplacementMappi
 		return result;
 	}
 
+  protected boolean traceOn = false;
+
+  public void describe(final BufferedTokenStream tokens) {
+    final String replaceableString = getText(replaceable, tokens);
+    final String replacementString = getText(replacement, tokens);
+    System.err.printf("replacement of %s with %s\n",replaceableString,replacementString);
+  }
+
 	protected String replace(final String string, final BufferedTokenStream tokens) {
+                
 		final String replaceableString = getText(replaceable, tokens);
 		final String replacementString = getText(replacement, tokens);
 
 		final String result;
+                java.io.PrintStream log = System.out;
+                final boolean isWordToWord = ((replaceable.cobolWord() != null) &&
+                                              // replaceableString.equals("QA zz 10") &&
+                                              (replacement.cobolWord() != null));
+                traceOn = replacementString.indexOf("HSFS-SUMA-DATA") != -1;
+                
 
 		if (replaceableString != null && replacementString != null) {
-			// regex for the replaceable
-			final String replaceableRegex = getRegexFromReplaceable(replaceableString);
-
-			// regex for the replacement
-			final String quotedReplacementRegex = Matcher.quoteReplacement(replacementString);
-
-			result = Pattern.compile(replaceableRegex).matcher(string).replaceAll(quotedReplacementRegex);
+                
+                        if (isWordToWord){
+                          if (traceOn){
+                            log.printf("IBM WORD-TO-WORD %s to %s \n",
+                                       replaceableString,replacementString);
+                          }
+                          String s = string;
+                          int sLen = s.length();
+                          int startPos = 0;
+                          int replaceablePos = -1;
+                          int replaceableLength = replaceableString.length();
+                          int replacementLength = replacementString.length();
+                          while ((replaceablePos = s.indexOf(replaceableString,startPos)) != -1){
+                            if (traceOn){
+                              log.printf("replaceablePos found at %d in \n%s\n",replaceablePos,s);
+                            }
+                            // here, what about prev char??
+                            boolean isWordStart = ((replaceablePos == 0) || (s.charAt(replaceablePos-1) == ' '));
+                            
+                            if (/* isWordStart && */ (replaceablePos + replacementLength == sLen)){
+                              // match whole word at end of string
+                              s = s.substring(0,replaceablePos)+replacementString;
+                              if (traceOn){
+                                log.printf("case 1 s is now %s\n",s);
+                              }
+                              break;
+                            }
+                            char nextChar = s.charAt(replaceablePos+replaceableLength);
+                            if (isWordStart && ((nextChar == '.' || nextChar == ' '))){
+                              // word ends with space or dot, what about other punctuation as word-terminating??
+                              s = (s.substring(0,replaceablePos)+
+                                   replacementString+
+                                   s.substring(replaceablePos+replaceableLength));
+                              if (traceOn){
+                                log.printf("case 2 s is now %s, isWordStart=%s\n",s,isWordStart);
+                              }
+                              startPos = replaceablePos + replacementLength + 1;
+                            } else {
+                              startPos = replaceablePos + replacementLength;
+                              if (traceOn){
+                                log.printf("case 3 startPos is %d\n",startPos);
+                              }
+                            }
+                          }
+                          result = s;
+                        } else {
+                          if (traceOn){
+                            log.printf("GENERAL REPLACEMENT %s to %s \n",
+                                       replaceableString,replacementString);
+                          }
+                          // regex for the replaceable
+                          final String replaceableRegex = getRegexFromReplaceable(replaceableString);
+                          // regex for the replacement
+                          final String quotedReplacementRegex = Matcher.quoteReplacement(replacementString);
+                          result = Pattern.compile(replaceableRegex).matcher(string).replaceAll(quotedReplacementRegex);
+                        }
 		} else {
 			result = string;
 		}
